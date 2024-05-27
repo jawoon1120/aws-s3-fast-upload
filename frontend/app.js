@@ -1,5 +1,5 @@
-const baseUrl = 'http://127.0.0.1:3000';
-const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunk size
+const baseUrl = 'http://127.0.0.1:8000';
+const CHUNK_SIZE = 8 * 1024 * 1024; // 5MB chunk size
 const fileInput = document.querySelector('#fileInput');
 const uploadBtn = document.querySelector('#uploadBtn');
 const progressBar = document.querySelector('.progress-bar');
@@ -37,6 +37,7 @@ uploadBtn.addEventListener('click', async () => {
       },
     });
     const { uploadId } = await res.json();
+
     console.log("uploadId ", uploadId);
     // Send file chunks
     const uploadPromises = [];
@@ -45,11 +46,13 @@ uploadBtn.addEventListener('click', async () => {
     for (let i = 0; i < totalChunks; i++) {
       end = start + CHUNK_SIZE;
       const chunk = file.slice(start, end);
+      
       const formData = new FormData();
       formData.append('index', i);
       formData.append('totalChunks', totalChunks);
       formData.append('fileName', fileName);
       formData.append('file', chunk);
+      
       const uploadPromise = fetch(`${baseUrl}/upload?uploadId=${uploadId}`, {
         method: "POST",
         body: formData,
@@ -71,6 +74,19 @@ uploadBtn.addEventListener('click', async () => {
     if (!success) {
       throw new Error('Error completing upload');
     }
+
+    // StartEncoding
+    const encodingBody = { path: fileName };
+    const encodingRes = await fetch(`${baseUrl}/encoding`, { 
+      method: 'POST',
+      body: JSON.stringify(encodingBody),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    const { path, rest } = await encodingRes.json();
+    console.log("file link: ", path);
+
 
     // End the timer and calculate the time elapsed
     const endTime = new Date();
